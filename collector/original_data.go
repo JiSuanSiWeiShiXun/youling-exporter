@@ -12,6 +12,7 @@ const (
 )
 
 func parseLoad(data string) (loads []float64, err error) {
+	// 访问linux系统下的/proc文件获取信息
 	loads = make([]float64, 3)
 	parts := strings.Fields(data)
 	if len(parts) < 3 {
