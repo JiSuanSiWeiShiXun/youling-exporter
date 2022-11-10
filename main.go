@@ -1,16 +1,12 @@
 package main
-
-// 构建的时候要注意 nethogs 库文件目录中有静态链接文件(*.a)时，会报错，因为所依赖的 libpcap 不提供静态链接途径。所以要么提前删除默认生成的静态链接文件，要么在构建的时候指定为动态链接
-
-//#cgo CFLAGS: -I./nethogs/src
-//#cgo LDFLAGS: -L${SRCDIR}/nethogs/src -lnethogs
-//#include <stdlib.h>
-//#include <libnethogs.h>
 /*
-extern void GoCallback(int action, NethogsPortMonitorRecord data);
+#cgo CFLAGS: -I./nethogs/src
+#cgo LDFLAGS: -L${SRCDIR}/lib -lnethogs
+#include <stdlib.h>
+#include "libnethogs.h"
+extern void GoCallback(int action, NethogsMonitorRecord data);
 
-
-static void WrapperFunc(int action, NethogsPortMonitorRecord const *data) {
+static void WrapperFunc(int action, NethogsMonitorRecord const *data) {
 	GoCallback(action, *data);
 }
 
@@ -45,7 +41,7 @@ type Record struct {
 }
 
 //export GoCallback
-func GoCallback(action C.int, data C.struct_NethogsPortMonitorRecord) {
+func GoCallback(action C.int, data C.struct_NethogsMonitorRecord) {
 	if action == 1 {
 		r := new(Record)
 		r.Time = time.Now()
@@ -55,7 +51,7 @@ func GoCallback(action C.int, data C.struct_NethogsPortMonitorRecord) {
 		}
 		r.PID = int(data.pid)
 		r.UID = int(data.uid)
-		r.Port = int(data.port)
+		//r.Port = int(data.port)
 		// 筛选数据
 		//flag := false
 		//for _, port := range NetCollector.Ports {
@@ -72,7 +68,7 @@ func GoCallback(action C.int, data C.struct_NethogsPortMonitorRecord) {
 		r.SentKbs = float32(data.sent_kbs)
 		r.RecvKbs = float32(data.recv_kbs)
 		//NetCollector.Histogram[r.PID] = r
-		fmt.Printf("[tick]%v\n[endtick]\n\n", r)
+		fmt.Printf("[tick]\n[Name]%v [PID]%v [UID]%v [DEV]%v [sdbt]%v [rcbt]%v [sdkb]%v [rckb]%v\n%v\n[endtick]\n\n", r.Name, r.PID, r.UID, r.DeviceName, r.SentBytes, r.RecvBytes, r.SentKbs, r.RecvKbs, r)
 	}
 }
 
