@@ -23,9 +23,7 @@ int rc = nethogsmonitor_loop(WrapperFunc, filter, 0);
 import "C"
 import (
 	"fmt"
-	"math"
 	"strings"
-	"sync/atomic"
 	"unsafe"
 	"youling-exporter/collector"
 )
@@ -33,6 +31,12 @@ import (
 //export Callback
 func Callback(action C.int, data C.struct_NethogsMonitorRecord) {
 	if action == 1 {
+		// MonitorRecordMap数据的读写锁
+		monitorRecordMutex.Lock()
+		defer func() {
+			monitorRecordMutex.Unlock()
+		}()
+
 		pid := int(data.pid)
 		if _, ok := nethogsCollector.RecordMap[pid]; !ok {
 			nethogsCollector.RecordMap[pid] = new(collector.NethogsMonitorRecord)
@@ -55,13 +59,18 @@ func Callback(action C.int, data C.struct_NethogsMonitorRecord) {
 		//if !flag {
 		//	return
 		//}
-		// TODO: 处理竞争
+
 		nethogsCollector.RecordMap[pid].DeviceName = C.GoString(data.device_name)
-		atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentBytes, uint64(data.sent_bytes))
-		atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvBytes, uint64(data.recv_bytes))
-		atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentKBs, math.Float64bits(float64(data.sent_kbs)))
-		atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvKBs, math.Float64bits(float64(data.recv_kbs)))
-		//atomic.StoreUint64(&g.valBits, math.Float64bits(val))
+		// TODO: 原子操作姿势不对
+		//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentBytes, uint64(data.sent_bytes))
+		//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvBytes, uint64(data.recv_bytes))
+		//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentKBs, math.Float64bits(float64(data.sent_kbs)))
+		//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvKBs, math.Float64bits(float64(data.recv_kbs)))
+		nethogsCollector.RecordMap[pid].SentBytes = uint64(data.sent_bytes)
+		nethogsCollector.RecordMap[pid].RecvBytes = uint64(data.recv_bytes)
+		nethogsCollector.RecordMap[pid].SentKBs = float64(data.sent_kbs)
+		nethogsCollector.RecordMap[pid].RecvKBs = float64(data.recv_kbs)
+
 		//NetCollector.Histogram[r.PID] = r
 		fmt.Printf("[tick]\n[Name]%v [PID]%v [UID]%v [DEV]%v [sdbt]%v [rcbt]%v [sdkb]%v [rckb]%v\n%v\n[endtick]\n\n",
 			nethogsCollector.RecordMap[pid].Name,

@@ -9,8 +9,11 @@ import (
 	"youling-exporter/collector"
 )
 
-var nethogsCollector *collector.NethogsCollector
-var once sync.Once
+var (
+	nethogsCollector   *collector.NethogsCollector
+	monitorRecordMutex sync.Mutex
+	once               sync.Once
+)
 
 func init() {
 	// singleton

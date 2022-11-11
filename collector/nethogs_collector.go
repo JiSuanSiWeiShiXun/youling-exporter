@@ -7,15 +7,15 @@ import (
 
 type (
 	NethogsMonitorRecord struct {
-		RecordID   int    `json:"record_id" desc:"?"`
-		Name       string `json:"name" desc:"？"`
-		PID        int    `json:"pid" desc:"进程ID"`
-		UID        uint32 `json:"uid" desc:"C uint32"`
-		DeviceName string `json:"device_name" desc:"网卡名"`
-		SentBytes  uint64 `json:"sent_bytes" desc:"统计到总共发送的数据量(byte)"`
-		RecvBytes  uint64 `json:"recv_bytes" desc:"统计到总共的接收数据量(byte)"`
-		SentKBs    uint64 `json:"sent_kbs" desc:"float64 delta时间内(1s) 发送的数据量，可以理解为瞬时速率(kb/s)"`
-		RecvKBs    uint64 `json:"recv_kbs" desc:"float64 delta时间内(1s) 收到的数据量"`
+		RecordID   int     `json:"record_id" desc:"?"`
+		Name       string  `json:"name" desc:"？"`
+		PID        int     `json:"pid" desc:"进程ID"`
+		UID        uint32  `json:"uid" desc:"C uint32"`
+		DeviceName string  `json:"device_name" desc:"网卡名"`
+		SentBytes  uint64  `json:"sent_bytes" desc:"统计到总共发送的数据量(byte)"`
+		RecvBytes  uint64  `json:"recv_bytes" desc:"统计到总共的接收数据量(byte)"`
+		SentKBs    float64 `json:"sent_kbs" desc:"float64 delta时间内(1s) 发送的数据量，可以理解为瞬时速率(kb/s)"`
+		RecvKBs    float64 `json:"recv_kbs" desc:"float64 delta时间内(1s) 收到的数据量"`
 	}
 
 	NethogsCollector struct {
