@@ -7,15 +7,15 @@ import (
 
 type (
 	NethogsMonitorRecord struct {
-		RecordID   int     `json:"record_id" desc:"?"`
-		Name       string  `json:"name" desc:"？"`
-		PID        int     `json:"pid" desc:"进程ID"`
-		UID        uint32  `json:"uid" desc:"C uint32"`
-		DeviceName string  `json:"device_name" desc:"网卡名"`
-		SentBytes  uint64  `json:"sent_bytes" desc:"统计到总共发送的数据量(byte)"`
-		RecvBytes  uint64  `json:"recv_bytes" desc:"统计到总共的接收数据量(byte)"`
-		SentKBs    float64 `json:"sent_kbs" desc:"delta时间内(1s) 发送的数据量，可以理解为瞬时速率(kb/s)"`
-		RecvKBs    float64 `json:"recv_kbs" desc:"delta时间内(1s) 收到的数据量"`
+		RecordID   int    `json:"record_id" desc:"?"`
+		Name       string `json:"name" desc:"？"`
+		PID        int    `json:"pid" desc:"进程ID"`
+		UID        uint32 `json:"uid" desc:"C uint32"`
+		DeviceName string `json:"device_name" desc:"网卡名"`
+		SentBytes  uint64 `json:"sent_bytes" desc:"统计到总共发送的数据量(byte)"`
+		RecvBytes  uint64 `json:"recv_bytes" desc:"统计到总共的接收数据量(byte)"`
+		SentKBs    uint64 `json:"sent_kbs" desc:"float64 delta时间内(1s) 发送的数据量，可以理解为瞬时速率(kb/s)"`
+		RecvKBs    uint64 `json:"recv_kbs" desc:"float64 delta时间内(1s) 收到的数据量"`
 	}
 
 	NethogsCollector struct {
@@ -67,46 +67,49 @@ func (nc *NethogsCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (nc *NethogsCollector) Collect(ch chan<- prometheus.Metric) {
-    for pid, record := range nc.RecordMap{
-	ch <- prometheus.MustNewConstMetric(
-		nethogsSentBytesDesc,
-		prometheus.CounterValue,
-		float64(nc.RecordMap.SentBytes),
-		nc.RecordMap.Name, // {"name", "pid", "uid", "device_name", "port"}
-		strconv.Itoa(nc.Record.PID),
-		strconv.Itoa(int(nc.Record.UID)),
-		nc.Record.DeviceName,
-		"[todo]port",
-	)
-	ch <- prometheus.MustNewConstMetric(
-		nethogsRecvBytesDesc,
-		prometheus.CounterValue,
-		float64(nc.Record.RecvBytes),
-		nc.Record.Name, // {"name", "pid", "uid", "device_name", "port"}
-		strconv.Itoa(nc.Record.PID),
-		strconv.Itoa(int(nc.Record.UID)),
-		nc.Record.DeviceName,
-		"[todo]port",
-	)
-	ch <- prometheus.MustNewConstMetric(
-		nethogsSentKBsDesc,
-		prometheus.GaugeValue,
-		nc.Record.SentKBs,
-		nc.Record.Name, // {"name", "pid", "uid", "device_name", "port"}
-		strconv.Itoa(nc.Record.PID),
-		strconv.Itoa(int(nc.Record.UID)),
-		nc.Record.DeviceName,
-		"[todo]port",
-	)
-	ch <- prometheus.MustNewConstMetric(
-		nethogsRecvKBsDesc,
-		prometheus.GaugeValue,
-		nc.Record.RecvKBs,
-		nc.Record.Name, // {"name", "pid", "uid", "device_name", "port"}
-		strconv.Itoa(nc.Record.PID),
-		strconv.Itoa(int(nc.Record.UID)),
-		nc.Record.DeviceName,
-		"[todo]port",
-	)
-}
+	for _, record := range nc.RecordMap {
+		//if _, ok := pidSet[]; !ok {
+		//	continue
+		//}
+		ch <- prometheus.MustNewConstMetric(
+			nethogsSentBytesDesc,
+			prometheus.CounterValue,
+			float64(record.SentBytes),
+			record.Name, // {"name", "pid", "uid", "device_name", "port"}
+			strconv.Itoa(record.PID),
+			strconv.Itoa(int(record.UID)),
+			record.DeviceName,
+			"[todo]port",
+		)
+		ch <- prometheus.MustNewConstMetric(
+			nethogsRecvBytesDesc,
+			prometheus.CounterValue,
+			float64(record.RecvBytes),
+			record.Name, // {"name", "pid", "uid", "device_name", "port"}
+			strconv.Itoa(record.PID),
+			strconv.Itoa(int(record.UID)),
+			record.DeviceName,
+			"[todo]port",
+		)
+		ch <- prometheus.MustNewConstMetric(
+			nethogsSentKBsDesc,
+			prometheus.GaugeValue,
+			float64(record.SentKBs),
+			record.Name, // {"name", "pid", "uid", "device_name", "port"}
+			strconv.Itoa(record.PID),
+			strconv.Itoa(int(record.UID)),
+			record.DeviceName,
+			"[todo]port",
+		)
+		ch <- prometheus.MustNewConstMetric(
+			nethogsRecvKBsDesc,
+			prometheus.GaugeValue,
+			float64(record.RecvKBs),
+			record.Name, // {"name", "pid", "uid", "device_name", "port"}
+			strconv.Itoa(record.PID),
+			strconv.Itoa(int(record.UID)),
+			record.DeviceName,
+			"[todo]port",
+		)
+	}
 }

@@ -23,20 +23,27 @@ int rc = nethogsmonitor_loop(WrapperFunc, filter, 0);
 import "C"
 import (
 	"fmt"
+	"math"
 	"strings"
+	"sync/atomic"
 	"unsafe"
+	"youling-exporter/collector"
 )
 
 //export Callback
 func Callback(action C.int, data C.struct_NethogsMonitorRecord) {
 	if action == 1 {
+		pid := int(data.pid)
+		if _, ok := nethogsCollector.RecordMap[pid]; !ok {
+			nethogsCollector.RecordMap[pid] = new(collector.NethogsMonitorRecord)
+		}
 		//r.Time = time.Now() // 需要记录时间吗？
-		nethogsCollector.Record.Name = C.GoString(data.name)
-		if strings.Contains(nethogsCollector.Record.Name, "unknown") {
+		nethogsCollector.RecordMap[pid].Name = C.GoString(data.name)
+		if strings.Contains(nethogsCollector.RecordMap[pid].Name, "unknown") {
 			return
 		}
-		nethogsCollector.Record.PID = int(data.pid)
-		nethogsCollector.Record.UID = uint32(data.uid)
+		nethogsCollector.RecordMap[pid].PID = int(data.pid)
+		nethogsCollector.RecordMap[pid].UID = uint32(data.uid)
 		//r.Port = int(data.port)
 		// 筛选数据
 		//flag := false
@@ -48,23 +55,24 @@ func Callback(action C.int, data C.struct_NethogsMonitorRecord) {
 		//if !flag {
 		//	return
 		//}
-		nethogsCollector.Record.DeviceName = C.GoString(data.device_name)
-		nethogsCollector.Record.SentBytes = uint64(data.sent_bytes)
-		nethogsCollector.Record.RecvBytes = uint64(data.recv_bytes)
-		nethogsCollector.Record.SentKBs = float64(data.sent_kbs)
-		nethogsCollector.Record.RecvKBs = float64(data.recv_kbs)
+		// TODO: 处理竞争
+		nethogsCollector.RecordMap[pid].DeviceName = C.GoString(data.device_name)
+		atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentBytes, uint64(data.sent_bytes))
+		atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvBytes, uint64(data.recv_bytes))
+		atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentKBs, math.Float64bits(float64(data.sent_kbs)))
+		atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvKBs, math.Float64bits(float64(data.recv_kbs)))
 		//atomic.StoreUint64(&g.valBits, math.Float64bits(val))
 		//NetCollector.Histogram[r.PID] = r
 		fmt.Printf("[tick]\n[Name]%v [PID]%v [UID]%v [DEV]%v [sdbt]%v [rcbt]%v [sdkb]%v [rckb]%v\n%v\n[endtick]\n\n",
-			nethogsCollector.Record.Name,
-			nethogsCollector.Record.PID,
-			nethogsCollector.Record.UID,
-			nethogsCollector.Record.DeviceName,
-			nethogsCollector.Record.SentBytes,
-			nethogsCollector.Record.RecvBytes,
-			nethogsCollector.Record.SentKBs,
-			nethogsCollector.Record.RecvKBs,
-			nethogsCollector.Record)
+			nethogsCollector.RecordMap[pid].Name,
+			nethogsCollector.RecordMap[pid].PID,
+			nethogsCollector.RecordMap[pid].UID,
+			nethogsCollector.RecordMap[pid].DeviceName,
+			nethogsCollector.RecordMap[pid].SentBytes,
+			nethogsCollector.RecordMap[pid].RecvBytes,
+			nethogsCollector.RecordMap[pid].SentKBs,
+			nethogsCollector.RecordMap[pid].RecvKBs,
+			nethogsCollector.RecordMap[pid])
 	}
 }
 
