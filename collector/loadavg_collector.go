@@ -5,19 +5,19 @@ import "github.com/prometheus/client_golang/prometheus"
 var nameSpace = "node"
 
 type (
-	NethogsCollector struct { // counter, gauge, histogram, summary
-		metrics []NethogsDesc
+	LoadavgCollector struct { // counter, gauge, histogram, summary
+		metrics []LoadavgDesc
 	}
 
-	NethogsDesc struct {
+	LoadavgDesc struct {
 		desc      *prometheus.Desc     // 为什么要在collector中实现一个 desc？能否直接作为collector成员变量？
 		valueType prometheus.ValueType // ?
 	}
 )
 
-func NewNethogsCollector() *NethogsCollector {
-	return &NethogsCollector{
-		metrics: []NethogsDesc{
+func NewLoadavgCollector() *LoadavgCollector {
+	return &LoadavgCollector{
+		metrics: []LoadavgDesc{
 			{prometheus.NewDesc(nameSpace+"_load1", "1m load avg", nil, nil), prometheus.GaugeValue},
 			{prometheus.NewDesc(nameSpace+"_load1", "1m load avg", nil, nil), prometheus.GaugeValue},
 			{prometheus.NewDesc(nameSpace+"_load1", "1m load avg", nil, nil), prometheus.GaugeValue},
@@ -25,10 +25,10 @@ func NewNethogsCollector() *NethogsCollector {
 	}
 }
 
-func (nc *NethogsCollector) Describe(ch chan<- *prometheus.Desc) {
+func (nc *LoadavgCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- nc.metrics[0].desc
 }
 
-func (nc *NethogsCollector) Collect(ch chan<- prometheus.Metric) {
+func (nc *LoadavgCollector) Collect(ch chan<- prometheus.Metric) {
 	//ch <- nc.metrics[0]
 }
