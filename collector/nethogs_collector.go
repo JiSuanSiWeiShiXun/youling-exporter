@@ -19,7 +19,7 @@ type (
 	}
 
 	NethogsCollector struct {
-		Record *NethogsMonitorRecord
+		RecordMap map[int]*NethogsMonitorRecord
 		//isCollected bool //record中存的是临时数据 程序不做缓存，上报一次后就清除
 		// 是否会存在一个prometheus pull频率和nethogs update频率差异 导致的数据丢失（中间还有一个collect()的调用频率）
 		// 核心疑问还是collect()调用之后，写到只写chan的数据去哪儿了呢
@@ -55,7 +55,7 @@ var (
 
 func NewNethogsCollector() *NethogsCollector {
 	return &NethogsCollector{
-		Record: new(NethogsMonitorRecord),
+		RecordMap: make(map[int]*NethogsMonitorRecord),
 	}
 }
 
@@ -67,15 +67,16 @@ func (nc *NethogsCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (nc *NethogsCollector) Collect(ch chan<- prometheus.Metric) {
+    for pid, record := range nc.RecordMap{
 	ch <- prometheus.MustNewConstMetric(
 		nethogsSentBytesDesc,
 		prometheus.CounterValue,
-		float64(nc.Record.SentBytes),
-		nc.Record.Name, // {"name", "pid", "uid", "device_name", "port"}
+		float64(nc.RecordMap.SentBytes),
+		nc.RecordMap.Name, // {"name", "pid", "uid", "device_name", "port"}
 		strconv.Itoa(nc.Record.PID),
 		strconv.Itoa(int(nc.Record.UID)),
 		nc.Record.DeviceName,
-		// port
+		"[todo]port",
 	)
 	ch <- prometheus.MustNewConstMetric(
 		nethogsRecvBytesDesc,
@@ -85,7 +86,7 @@ func (nc *NethogsCollector) Collect(ch chan<- prometheus.Metric) {
 		strconv.Itoa(nc.Record.PID),
 		strconv.Itoa(int(nc.Record.UID)),
 		nc.Record.DeviceName,
-		// port
+		"[todo]port",
 	)
 	ch <- prometheus.MustNewConstMetric(
 		nethogsSentKBsDesc,
@@ -95,7 +96,7 @@ func (nc *NethogsCollector) Collect(ch chan<- prometheus.Metric) {
 		strconv.Itoa(nc.Record.PID),
 		strconv.Itoa(int(nc.Record.UID)),
 		nc.Record.DeviceName,
-		// port
+		"[todo]port",
 	)
 	ch <- prometheus.MustNewConstMetric(
 		nethogsRecvKBsDesc,
@@ -105,6 +106,7 @@ func (nc *NethogsCollector) Collect(ch chan<- prometheus.Metric) {
 		strconv.Itoa(nc.Record.PID),
 		strconv.Itoa(int(nc.Record.UID)),
 		nc.Record.DeviceName,
-		// port
+		"[todo]port",
 	)
+}
 }
