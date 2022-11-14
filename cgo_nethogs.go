@@ -85,9 +85,9 @@ func Callback(action C.int, data C.struct_NethogsMonitorRecord) {
 	}
 }
 
-func CallNethogs() {
+func CallNethogs(str string) {
 	// 动态链接
-	var cstring *C.char = C.CString("")
+	var cstring *C.char = C.CString(str)
 	defer C.free(unsafe.Pointer(cstring))
 	if record := C.CallMyFunction(cstring); record != 0 {
 		fmt.Printf("wrong return\n")
