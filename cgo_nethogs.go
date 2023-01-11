@@ -25,64 +25,49 @@ import (
 	"fmt"
 	"strings"
 	"unsafe"
-	"youling-exporter/collector"
+
+	"nethogs-exporter/collector"
+
+	log "github.com/sirupsen/logrus"
 )
 
 //export Callback
 func Callback(action C.int, data C.struct_NethogsMonitorRecord) {
-	if action == 1 {
-		// MonitorRecordMap数据的读写锁
-		monitorRecordMutex.Lock()
-		defer func() {
-			monitorRecordMutex.Unlock()
-		}()
-
-		pid := int(data.pid)
-		if _, ok := nethogsCollector.RecordMap[pid]; !ok {
-			nethogsCollector.RecordMap[pid] = new(collector.NethogsMonitorRecord)
-		}
-		//r.Time = time.Now() // 需要记录时间吗？
-		nethogsCollector.RecordMap[pid].Name = C.GoString(data.name)
-		if strings.Contains(nethogsCollector.RecordMap[pid].Name, "unknown") {
-			return
-		}
-		nethogsCollector.RecordMap[pid].PID = int(data.pid)
-		nethogsCollector.RecordMap[pid].UID = uint32(data.uid)
-		//r.Port = int(data.port)
-		// 筛选数据
-		//flag := false
-		//for _, port := range NetCollector.Ports {
-		//	if port == r.Port {
-		//		flag = true
-		//	}
-		//}
-		//if !flag {
-		//	return
-		//}
-
-		nethogsCollector.RecordMap[pid].DeviceName = C.GoString(data.device_name)
-		// TODO: 原子操作姿势不对
-		//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentBytes, uint64(data.sent_bytes))
-		//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvBytes, uint64(data.recv_bytes))
-		//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentKBs, math.Float64bits(float64(data.sent_kbs)))
-		//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvKBs, math.Float64bits(float64(data.recv_kbs)))
-		nethogsCollector.RecordMap[pid].SentBytes = uint64(data.sent_bytes)
-		nethogsCollector.RecordMap[pid].RecvBytes = uint64(data.recv_bytes)
-		nethogsCollector.RecordMap[pid].SentKBs = float64(data.sent_kbs)
-		nethogsCollector.RecordMap[pid].RecvKBs = float64(data.recv_kbs)
-
-		//NetCollector.Histogram[r.PID] = r
-		fmt.Printf("[tick]\n[Name]%v [PID]%v [UID]%v [DEV]%v [sdbt]%v [rcbt]%v [sdkb]%v [rckb]%v\n%v\n[endtick]\n\n",
-			nethogsCollector.RecordMap[pid].Name,
-			nethogsCollector.RecordMap[pid].PID,
-			nethogsCollector.RecordMap[pid].UID,
-			nethogsCollector.RecordMap[pid].DeviceName,
-			nethogsCollector.RecordMap[pid].SentBytes,
-			nethogsCollector.RecordMap[pid].RecvBytes,
-			nethogsCollector.RecordMap[pid].SentKBs,
-			nethogsCollector.RecordMap[pid].RecvKBs,
-			nethogsCollector.RecordMap[pid])
+	if action != 1 {
+		log.Warnf("get data from nethogs error: action=%v", action)
 	}
+	//r.Time = time.Now() // 需要记录时间吗？
+	record := new(collector.NethogsMonitorRecord)
+	record.Name = C.GoString(data.name)
+	if strings.Contains(record.Name, "unknown") {
+		return
+	}
+	record.PID = int(data.pid)
+	record.UID = uint32(data.uid)
+	record.DeviceName = C.GoString(data.device_name)
+	// TODO: 原子操作姿势不对
+	//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentBytes, uint64(data.sent_bytes))
+	//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvBytes, uint64(data.recv_bytes))
+	//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].SentKBs, math.Float64bits(float64(data.sent_kbs)))
+	//atomic.StoreUint64(&nethogsCollector.RecordMap[pid].RecvKBs, math.Float64bits(float64(data.recv_kbs)))
+	record.SentBytes = uint64(data.sent_bytes)
+	record.RecvBytes = uint64(data.recv_bytes)
+	record.SentKBs = float64(data.sent_kbs)
+	record.RecvKBs = float64(data.recv_kbs)
+	scrapeChan <- record
+
+	// 别在C里用go的打印
+	//log.Debugf("[tick]\n[key]\"%v\" [Name]%v [PID]%v [UID]%v [DEV]%v [sdbt]%v [rcbt]%v [sdkb]%v [rckb]%v\n%v\n[endtick]\n\n",
+	//	key,
+	//	nethogsCollector.RecordMap[key].Name,
+	//	nethogsCollector.RecordMap[key].PID,
+	//	nethogsCollector.RecordMap[key].UID,
+	//	nethogsCollector.RecordMap[key].DeviceName,
+	//	nethogsCollector.RecordMap[key].SentBytes,
+	//	nethogsCollector.RecordMap[key].RecvBytes,
+	//	nethogsCollector.RecordMap[key].SentKBs,
+	//	nethogsCollector.RecordMap[key].RecvKBs,
+	//	nethogsCollector.RecordMap[key])
 }
 
 func CallNethogs(str string) {
