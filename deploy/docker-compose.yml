@@ -1,0 +1,23 @@
+# encoding: utf-8
+services:
+  pcap-exporter:
+    image: youling/pcap-exporter:dev
+    build: ./
+    command: go run cmd/udp_server/main.go
+    container_name: pcap-exporter
+    working_dir: /home/udp_server/
+    volumes:
+      - ../:/home/pcap_exporter/:rw
+      - /Users/xiezhh/youling/projects/HelloWorldGolang/net/:/home/udp_server/:rw
+    ports:
+      - 4869:4869
+
+  udp-client:
+    image: hello.world.golang/udp-client:dev
+    build: /Users/xiezhh/youling/projects/HelloWorldGolang/net/deploy/udp_client/
+    command: tail -f /dev/null
+    working_dir: /home/udp_client/
+    volumes:
+      - /Users/xiezhh/youling/projects/HelloWorldGolang/net/:/home/udp_client/
+    depends_on:
+      - pcap-exporter
